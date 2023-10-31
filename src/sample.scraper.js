@@ -133,34 +133,54 @@ var __generator =
     }
   };
 Object.defineProperty(exports, "__esModule", { value: true });
-var axios_1 = require("axios");
-var cheerio_1 = require("cheerio");
-
-function fetchPageContent(url) {
+const fetch = require("node-fetch");
+const cheerio = require("cheerio");
+const fs = require("fs");
+function fetchAndParseTables(url) {
   return __awaiter(this, void 0, void 0, function () {
-    var response;
+    var response, html, $_1, tables, tableData_1, error_1;
     return __generator(this, function (_a) {
       switch (_a.label) {
         case 0:
-          return [4 /*yield*/, axios_1.default.get(url)];
+          _a.trys.push([0, 3, , 4]);
+          return [4 /*yield*/, fetch(url)];
         case 1:
           response = _a.sent();
-          return [2 /*return*/, response.data];
+          return [4 /*yield*/, response.text()];
+        case 2:
+          html = _a.sent();
+          $_1 = cheerio.load(html);
+          tables = $_1("table");
+          tableData_1 = [];
+          tables.each(function (index, table) {
+            var rows = $_1(table).find("tr");
+            // 各テーブルのデータを格納するオブジェクト
+            var tableObj = {
+              // tableObjの型情報を追加
+              rowsData: [],
+            };
+            rows.each(function (_, row) {
+              var rowData = [];
+              var columns = $_1(row).find("td, th");
+              columns.each(function (_, column) {
+                rowData.push($_1(column).text().trim());
+              });
+              tableObj.rowsData.push(rowData);
+            });
+            tableData_1.push(tableObj);
+          });
+          // テーブル情報をJSONファイルに保存
+          fs.writeFileSync("tables.json", JSON.stringify(tableData_1, null, 2));
+          return [3 /*break*/, 4];
+        case 3:
+          error_1 = _a.sent();
+          console.error("エラー:", error_1);
+          return [3 /*break*/, 4];
+        case 4:
+          return [2 /*return*/];
       }
     });
   });
 }
-
-async function main() {
-  var url = "https://db.netkeiba.com/horse/2019105219/";
-  var html = await fetchPageContent(url);
-  var $ = cheerio_1.default.load(html);
-
-  var pageTitle = $("title").text();
-  console.log("ページタイトル:", pageTitle);
-
-  var horseName = $("h1").text();
-  console.log("競走馬の名前:", horseName);
-}
-
-main(); // 非同期関数を呼び出す
+var url = "https://db.netkeiba.com/race/201901010101";
+fetchAndParseTables(url);

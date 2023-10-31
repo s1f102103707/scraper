@@ -1,19 +1,44 @@
-import axios from "axios";
-import cheerio from "cheerio";
+const fetch = require("node-fetch");
+import * as cheerio from "cheerio";
+import * as fs from "fs";
 
-async function fetchPageContent(url: string): Promise<string> {
-  const response = await axios.get(url);
-  return response.data;
+async function fetchAndParseTables(url: string): Promise<void> {
+  try {
+    const response = await fetch(url);
+    const html = await response.text();
+    const $ = cheerio.load(html);
+
+    const tables = $("table");
+
+    const tableData: { rowsData: string[][] }[] = [];
+
+    tables.each((index, table) => {
+      const rows = $(table).find("tr");
+
+      const tableObj: { rowsData: string[][] } = {
+        rowsData: [],
+      };
+
+      rows.each((_, row) => {
+        const rowData: string[] = [];
+
+        const columns = $(row).find("td, th");
+        columns.each((_, column) => {
+          rowData.push($(column).text().trim());
+        });
+
+        tableObj.rowsData.push(rowData);
+      });
+
+      tableData.push(tableObj);
+    });
+
+    // ここで得た情報をJSONファイルに保存する
+    fs.writeFileSync("tables.json", JSON.stringify(tableData, null, 2));
+  } catch (error) {
+    console.error("エラー:", error);
+  }
 }
 
-const url = "https://db.netkeiba.com/horse/2019105219/";
-const html = await fetchPageContent(url);
-
-const $ = cheerio.load(html);
-
-// 例: ウェブページからタイトルを取得
-const pageTitle = $("title").text();
-console.log("ページタイトル:", pageTitle);
-
-const horseName = $("h1").text();
-console.log("競走馬の名前:", horseName);
+const url = "https://db.netkeiba.com/race/201901010101";
+fetchAndParseTables(url);
