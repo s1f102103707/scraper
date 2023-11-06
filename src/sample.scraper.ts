@@ -1,7 +1,7 @@
-const fetch = require("node-fetch");
+//const fetch = require("node-fetch");
+import * as fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import * as fs from "fs";
-
 async function fetchAndParseTables(url: string): Promise<void> {
   try {
     const response = await fetch(url);
