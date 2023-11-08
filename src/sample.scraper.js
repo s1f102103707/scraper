@@ -36,7 +36,6 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-//const fetch = require("node-fetch");
 var node_fetch_1 = require("node-fetch");
 var cheerio = require("cheerio");
 var fs = require("fs");

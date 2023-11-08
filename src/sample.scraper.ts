@@ -1,44 +1,28 @@
-//const fetch = require("node-fetch");
-import * as fetch from "node-fetch";
-import * as cheerio from "cheerio";
-import * as fs from "fs";
-async function fetchAndParseTables(url: string): Promise<void> {
+import axios from "axios";
+import cheerio from "cheerio";
+
+async function scrapeRaceInfo(url: string) {
   try {
-    const response = await fetch(url);
-    const html = await response.text();
-    const $ = cheerio.load(html);
+    const response = await axios.get(url);
+    if (response.status === 200) {
+      const html = response.data;
+      const $ = cheerio.load(html);
 
-    const tables = $("table");
+      // ここで必要なデータを抽出します
+      const raceName = $(".race_header").find("h1").text();
+      const raceDate = $(".race_data").find(".smalltxt").text();
 
-    const tableData: { rowsData: string[][] }[] = [];
+      console.log("レース名:", raceName);
+      console.log("レース日:", raceDate);
 
-    tables.each((index, table) => {
-      const rows = $(table).find("tr");
-
-      const tableObj: { rowsData: string[][] } = {
-        rowsData: [],
-      };
-
-      rows.each((_, row) => {
-        const rowData: string[] = [];
-
-        const columns = $(row).find("td, th");
-        columns.each((_, column) => {
-          rowData.push($(column).text().trim());
-        });
-
-        tableObj.rowsData.push(rowData);
-      });
-
-      tableData.push(tableObj);
-    });
-
-    // ここで得た情報をJSONファイルに保存する
-    fs.writeFileSync("tables.json", JSON.stringify(tableData, null, 2));
+      // 他のデータを抽出するためのセレクタや処理を追加します
+    } else {
+      console.log("HTTPリクエストが失敗しました。");
+    }
   } catch (error) {
-    console.error("エラー:", error);
+    console.error("エラーが発生しました:", error);
   }
 }
 
-const url = "https://db.netkeiba.com/race/201901010101";
-fetchAndParseTables(url);
+const url = "https://db.netkeiba.com/race/202309040411/";
+scrapeRaceInfo(url);
